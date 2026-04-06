@@ -2,6 +2,40 @@ import { getAIProvider } from "./provider";
 import type { Customer } from "@/lib/db/schema";
 import type { Violation } from "@/types";
 
+const verifyFacts = async (generatedText: string, customer: Customer) => {
+  const ai = getAIProvider();
+
+  const system = `You are a compliance auditor. Your only job is to detect factual errors in AI-generated messages. Respond only with valid JSON.`;
+
+  const prompt = `Check this generated message for factual errors against the ground truth.
+
+GROUND TRUTH:
+- Full Name: ${customer.fullName}
+- Plan: ${customer.plan}
+- Amount Due: $${Number(customer.amountDue).toFixed(2)}
+- Due Date: ${customer.dueDate}
+- Account ID: ${customer.accountId}
+
+GENERATED MESSAGE:
+"""
+${generatedText}
+"""
+
+Return ONLY valid JSON, no markdown, no explanation:
+{ "violations": [{ "field": "string", "expected": "string", "found": "string" }] }
+
+If no violations: { "violations": [] }`;
+
+  try {
+    const raw = await ai.complete(system, [{ role: "user", content: prompt }], 400);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    const violations: Violation[] = parsed.violations ?? [];
+    return { violations, verified: violations.length === 0 };
+  } catch {
+    return { violations: [], verified: true };
+  }
+};
+
 export const generateGuarded = async (customer: Customer, type: string) => {
   const ai = getAIProvider();
 
@@ -48,42 +82,4 @@ export const generateUnguarded = async (customer: Customer, type: string) => {
 
   const { violations, verified } = await verifyFacts(text, customer);
   return { text, violations, verified };
-};
-
-const verifyFacts = async (generatedText: string, customer: Customer) => {
-  const ai = getAIProvider();
-
-  const system = `You are a compliance auditor. Your only job is to detect factual errors in AI-generated messages. Respond only with valid JSON.`;
-
-  const prompt = `Check this generated message for factual errors against the ground truth.
-
-GROUND TRUTH:
-- Full Name: ${customer.fullName}
-- Plan: ${customer.plan}
-- Amount Due: $${Number(customer.amountDue).toFixed(2)}
-- Due Date: ${customer.dueDate}
-- Account ID: ${customer.accountId}
-
-GENERATED MESSAGE:
-"""
-${generatedText}
-"""
-
-Return ONLY valid JSON, no markdown, no explanation:
-{ "violations": [{ "field": "string", "expected": "string", "found": "string" }] }
-
-If no violations: { "violations": [] }`;
-
-  try {
-    const raw = await ai.complete(
-      system,
-      [{ role: "user", content: prompt }],
-      400
-    );
-    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    const violations: Violation[] = parsed.violations ?? [];
-    return { violations, verified: violations.length === 0 };
-  } catch {
-    return { violations: [], verified: true };
-  }
 };
