@@ -43,7 +43,7 @@ export const generateGuarded = async (customer: Customer, type: string) => {
 
 CRITICAL RULES:
 1. Use ONLY the verified data provided below. Do NOT invent, approximate, or infer any values.
-2. Every number, name, date, and plan name MUST match the record exactly.
+2. Every number, name, date, and plan if applicable MUST match the record exactly.
 3. If unsure of a value, omit it rather than guess.
 4. Tone: professional, empathetic, non-threatening.
 
