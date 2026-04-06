@@ -5,6 +5,7 @@ import axios from "axios";
 import type { Customer, OutreachLog } from "@/lib/db/schema";
 import type { Violation } from "@/types";
 import ViolationHighlighter from "./ViolationHighlighter";
+import { cn } from "@/lib/utils";
 
 type Props = {
   customer: Customer;
@@ -19,28 +20,36 @@ type Result = {
 };
 
 const typeLabels: Record<string, string> = {
-  email: "Email",
-  sms: "SMS",
+  email:       "Email",
+  sms:         "SMS",
   call_script: "Call Script",
 };
 
-const modeStyle = {
-  guarded: {
-    seg: "data-[active=true]:bg-accent data-[active=true]:text-white",
-    btn: "bg-accent hover:opacity-85 text-white",
-  },
-  unguarded: {
-    seg: "data-[active=true]:bg-danger data-[active=true]:text-white",
-    btn: "bg-danger hover:opacity-85 text-white",
-  },
-};
+const segBase =
+  "px-3.5 py-1.5 border-r last:border-r-0 border-border text-[13px] cursor-pointer text-muted hover:bg-border-muted hover:text-ink transition-all";
+
+const modeBadgeCn = (mode: string) =>
+  cn(
+    "inline-block px-2 py-0.5 rounded-full text-[11px] font-medium",
+    mode === "guarded"
+      ? "bg-accent-light text-accent border border-accent-mid"
+      : "bg-danger-light text-danger border border-danger-mid"
+  );
+
+const historyBadgeCn = (isGuarded: boolean) =>
+  cn(
+    "inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium",
+    isGuarded
+      ? "bg-accent-light text-accent border border-accent-mid"
+      : "bg-danger-light text-danger border border-danger-mid"
+  );
 
 const GeneratePanel = ({ customer, logs }: Props) => {
-  const [type, setType] = useState<"email" | "sms" | "call_script">("email");
-  const [mode, setMode] = useState<"guarded" | "unguarded">("guarded");
+  const [type, setType]       = useState<"email" | "sms" | "call_script">("email");
+  const [mode, setMode]       = useState<"guarded" | "unguarded">("guarded");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
+  const [result, setResult]   = useState<Result | null>(null);
+  const [error, setError]     = useState("");
 
   const generate = async () => {
     setLoading(true);
@@ -65,15 +74,13 @@ const GeneratePanel = ({ customer, logs }: Props) => {
     }
   };
 
-  const segBase =
-    "px-3.5 py-1.5 border-r last:border-r-0 border-border text-[13px] cursor-pointer text-muted hover:bg-border-muted hover:text-ink transition-all";
-
   return (
     <div className="bg-surface border border-border rounded-xl px-6 py-6 shadow-xs flex flex-col gap-5">
       <h3 className="font-serif text-[19px] font-normal text-ink">Generate Outreach</h3>
 
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-4">
+
         {/* Type toggle */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
@@ -84,7 +91,7 @@ const GeneratePanel = ({ customer, logs }: Props) => {
               <button
                 key={t}
                 onClick={() => setType(t)}
-                className={`${segBase} ${type === t ? "bg-ink text-canvas" : ""}`}
+                className={cn(segBase, type === t && "bg-ink text-canvas")}
               >
                 {typeLabels[t]}
               </button>
@@ -100,13 +107,13 @@ const GeneratePanel = ({ customer, logs }: Props) => {
           <div className="flex border border-border rounded-md overflow-hidden">
             <button
               onClick={() => setMode("guarded")}
-              className={`${segBase} ${mode === "guarded" ? "bg-accent! text-white!" : ""}`}
+              className={cn(segBase, mode === "guarded" && "bg-accent text-white")}
             >
               Guarded
             </button>
             <button
               onClick={() => setMode("unguarded")}
-              className={`${segBase} ${mode === "unguarded" ? "bg-danger! text-white!" : ""}`}
+              className={cn(segBase, mode === "unguarded" && "bg-danger text-white")}
             >
               Unguarded
             </button>
@@ -117,7 +124,10 @@ const GeneratePanel = ({ customer, logs }: Props) => {
         <button
           onClick={generate}
           disabled={loading}
-          className={`self-end px-5 py-2 rounded-md text-[14px] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity ${modeStyle[mode].btn}`}
+          className={cn(
+            "self-end px-5 py-2 rounded-md text-[14px] font-medium cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:opacity-85",
+            mode === "guarded" ? "bg-accent" : "bg-danger"
+          )}
         >
           {loading ? "Generating…" : `Generate ${typeLabels[type]}`}
         </button>
@@ -139,23 +149,17 @@ const GeneratePanel = ({ customer, logs }: Props) => {
 
       {/* Result */}
       {result && (
-        <div
-          className={`rounded-xl border overflow-hidden ${result.verified ? "border-accent-mid" : "border-danger-mid"}`}
-        >
+        <div className={cn("rounded-xl border overflow-hidden", result.verified ? "border-accent-mid" : "border-danger-mid")}>
+
           {/* Result header */}
-          <div
-            className={`px-4 py-3 border-b flex items-center gap-2.5 ${result.verified ? "bg-accent-light border-accent-mid" : "bg-danger-light border-danger-mid"}`}
-          >
-            <span
-              className={`text-[13px] font-semibold ${result.verified ? "text-accent" : "text-danger"}`}
-            >
+          <div className={cn(
+            "px-4 py-3 border-b flex items-center gap-2.5",
+            result.verified ? "bg-accent-light border-accent-mid" : "bg-danger-light border-danger-mid"
+          )}>
+            <span className={cn("text-[13px] font-semibold", result.verified ? "text-accent" : "text-danger")}>
               {result.verified ? "✓ Verified — No Violations" : "⚠ Violations Detected"}
             </span>
-            <span
-              className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${mode === "guarded" ? "bg-accent-light text-accent border border-accent-mid" : "bg-danger-light text-danger border border-danger-mid"}`}
-            >
-              {mode}
-            </span>
+            <span className={modeBadgeCn(mode)}>{mode}</span>
           </div>
 
           {/* Generated text */}
@@ -171,7 +175,7 @@ const GeneratePanel = ({ customer, logs }: Props) => {
               </h4>
               <div className="flex flex-col gap-2">
                 {result.violations.map((v, i) => (
-                  <div key={i} className="flex items-baseline gap-3 text-[13px]">
+                  <div key={i} className="flex items-baseline gap-3">
                     <span className="font-mono text-[12px] font-medium text-danger min-w-[100px]">
                       {v.field}
                     </span>
@@ -201,10 +205,7 @@ const GeneratePanel = ({ customer, logs }: Props) => {
             <thead>
               <tr className="bg-canvas border-b border-border">
                 {["Type", "Mode", "Result", "Date"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.6px] text-muted"
-                  >
+                  <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.6px] text-muted">
                     {h}
                   </th>
                 ))}
@@ -217,16 +218,10 @@ const GeneratePanel = ({ customer, logs }: Props) => {
                     {log.type.replace("_", " ")}
                   </td>
                   <td className="px-3 py-2">
-                    <span
-                      className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${log.mode === "guarded" ? "bg-accent-light text-accent border border-accent-mid" : "bg-danger-light text-danger border border-danger-mid"}`}
-                    >
-                      {log.mode}
-                    </span>
+                    <span className={historyBadgeCn(log.mode === "guarded")}>{log.mode}</span>
                   </td>
                   <td className="px-3 py-2">
-                    <span
-                      className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${log.verified ? "bg-accent-light text-accent border border-accent-mid" : "bg-danger-light text-danger border border-danger-mid"}`}
-                    >
+                    <span className={historyBadgeCn(log.verified ?? false)}>
                       {log.verified ? "Clean" : "Violations"}
                     </span>
                   </td>

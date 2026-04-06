@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { getAllCustomers, getRecentLogs } from "@/lib/db/queries";
 import SignOutButton from "@/components/SignOutButton";
+import { cn } from "@/lib/utils";
 
 const statusStyles: Record<string, string> = {
   pending:   "bg-warn-light text-warn border border-warn-mid",
@@ -15,6 +16,22 @@ const statusLabel: Record<string, string> = {
   contacted: "Contacted",
   resolved:  "Resolved",
 };
+
+const modeBadgeCn = (mode: string) =>
+  cn(
+    "inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium",
+    mode === "guarded"
+      ? "bg-accent-light text-accent border border-accent-mid"
+      : "bg-danger-light text-danger border border-danger-mid"
+  );
+
+const verifiedBadgeCn = (verified: boolean | null) =>
+  cn(
+    "inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium",
+    verified
+      ? "bg-accent-light text-accent border border-accent-mid"
+      : "bg-danger-light text-danger border border-danger-mid"
+  );
 
 const DashboardPage = async () => {
   const [customers, recentLogs] = await Promise.all([
@@ -58,7 +75,7 @@ const DashboardPage = async () => {
               { value: resolved,  label: "Resolved" },
             ].map((s) => (
               <div key={s.label} className="bg-surface border border-border rounded-md px-4 py-3 shadow-xs">
-                <div className={`text-[22px] font-semibold text-ink leading-tight mb-0.5 ${s.mono ? "font-mono" : ""}`}>
+                <div className={cn("text-[22px] font-semibold text-ink leading-tight mb-0.5", s.mono && "font-mono")}>
                   {s.value}
                 </div>
                 <div className="text-[11px] uppercase tracking-[0.5px] text-muted">
@@ -91,7 +108,7 @@ const DashboardPage = async () => {
                     </td>
                     <td className="px-3.5 py-3 text-[13px] font-mono text-ink">{c.dueDate}</td>
                     <td className="px-3.5 py-3">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium ${statusStyles[c.status]}`}>
+                      <span className={cn("inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium", statusStyles[c.status])}>
                         {statusLabel[c.status]}
                       </span>
                     </td>
@@ -121,14 +138,12 @@ const DashboardPage = async () => {
                 <li key={log.id} className="bg-surface border border-border rounded-md px-3 py-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] font-medium text-ink">{log.customerName}</span>
-                    <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${log.verified ? "bg-accent-light text-accent border border-accent-mid" : "bg-danger-light text-danger border border-danger-mid"}`}>
+                    <span className={verifiedBadgeCn(log.verified)}>
                       {log.verified ? "Clean" : "Violations"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium ${log.mode === "guarded" ? "bg-accent-light text-accent border border-accent-mid" : "bg-danger-light text-danger border border-danger-mid"}`}>
-                      {log.mode}
-                    </span>
+                    <span className={modeBadgeCn(log.mode)}>{log.mode}</span>
                     <span className="text-[11px] font-mono text-muted">
                       {log.type.replace("_", " ")}
                     </span>
