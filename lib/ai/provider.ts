@@ -26,7 +26,7 @@ const buildFallbackChain = (
 };
 
 export const getAIProvider = (): AIAdapter => {
-  const primary = process.env.AI_PROVIDER ?? "anthropic";
+  const primary = process.env.AI_PROVIDER ?? "gemini";
 
   if (!ALL_ADAPTERS[primary]) {
     throw new Error(
