@@ -23,9 +23,12 @@ export const getRecentLogs = (limit = 5) =>
   db
     .select({
       id: outreachLog.id,
+      customerId: outreachLog.customerId,
       type: outreachLog.type,
       mode: outreachLog.mode,
+      generatedText: outreachLog.generatedText,
       verified: outreachLog.verified,
+      violations: outreachLog.violations,
       createdAt: outreachLog.createdAt,
       customerName: customers.fullName,
     })
@@ -40,3 +43,5 @@ export const insertOutreachLog = (data: NewOutreachLog) =>
     .values(data)
     .returning()
     .then((rows) => rows[0]);
+
+export type RecentLog = Awaited<ReturnType<typeof getRecentLogs>>[number];
