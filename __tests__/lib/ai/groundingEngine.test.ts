@@ -129,15 +129,27 @@ describe("generateGuarded", () => {
     expect(generationMessages[0].content).toContain("call_script");
   });
 
-  it("falls back to verified:true when the verify response is unparseable JSON", async () => {
+  it("sets verified:false and verificationError:true when the verify response is unparseable JSON", async () => {
     mockComplete
       .mockResolvedValueOnce("Some text.")
       .mockResolvedValueOnce("not valid json at all!!!");
 
     const result = await generateGuarded(mockCustomer, "email");
 
-    expect(result.verified).toBe(true);
+    expect(result.verified).toBe(false);
     expect(result.violations).toEqual([]);
+    expect(result.verificationError).toBe(true);
+  });
+
+  it("sets verified:false and verificationError:true when the verify AI call throws", async () => {
+    mockComplete
+      .mockResolvedValueOnce("Some text.")
+      .mockRejectedValueOnce(new Error("Network failure"));
+
+    const result = await generateGuarded(mockCustomer, "email");
+
+    expect(result.verified).toBe(false);
+    expect(result.verificationError).toBe(true);
   });
 
   it("handles markdown-wrapped JSON from the verify call", async () => {
