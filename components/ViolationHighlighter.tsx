@@ -29,7 +29,9 @@ const ViolationHighlighter = ({ text, violations }: Props) => {
 
   for (const violation of sorted) {
     const idx = remaining.indexOf(violation.found);
-    if (idx === -1) continue;
+    if (idx === -1) {
+      continue;
+    }
 
     if (idx > 0) {
       segments.push({ text: remaining.slice(0, idx), highlighted: false });
@@ -55,7 +57,7 @@ const ViolationHighlighter = ({ text, violations }: Props) => {
           </mark>
         ) : (
           <span key={i}>{seg.text}</span>
-        ),
+        )
       )}
     </pre>
   );
