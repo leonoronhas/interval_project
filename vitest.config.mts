@@ -12,7 +12,7 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov"],
+      reporter: ["text"],
       include: ["app/**", "components/**", "hooks/**", "lib/**"],
       exclude: [
         // Infrastructure that requires live DB / Next.js runtime — test via E2E
