@@ -34,7 +34,13 @@ export const CustomerTableRow = ({ customer }: { customer: Customer }) => {
           {statusLabel[customer.status]}
         </span>
       </td>
-      <td className="px-3.5 py-3 text-[13px] font-medium text-accent">Generate →</td>
+      <td className="px-3.5 py-3 text-[13px] font-medium text-accent">
+        {customer.status === "resolved" ? (
+          <span className="text-muted font-normal">Resolved</span>
+        ) : (
+          "Generate →"
+        )}
+      </td>
     </tr>
   );
 };

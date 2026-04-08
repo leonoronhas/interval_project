@@ -69,6 +69,18 @@ const GeneratePanel = ({ customer, logs }: Props) => {
     setError("");
   };
 
+  if (customer.status === "resolved") {
+    return (
+      <div className="bg-surface border border-border rounded-xl px-6 py-6 shadow-xs flex flex-col gap-5">
+        <h3 className="font-serif text-[19px] font-normal text-ink">Generate Outreach</h3>
+        <p className="text-[14px] text-muted">
+          This issue is resolved. No further action is required.
+        </p>
+        <GenerationHistory logs={logs} />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface border border-border rounded-xl px-6 py-6 shadow-xs flex flex-col gap-5">
       <h3 className="font-serif text-[19px] font-normal text-ink">Generate Outreach</h3>
