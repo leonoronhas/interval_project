@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { typeLabels } from "@/lib/constants";
+import { Badge } from "@/components/ui/Badge";
+import { VerificationResult } from "@/components/VerificationResult";
+import ViolationHighlighter from "@/components/ViolationHighlighter";
+import { OutreachControls } from "@/components/generate/OutreachControls";
+import { GenerationHistory } from "@/components/generate/GenerationHistory";
+import { cn } from "@/lib/utils";
+import { useGenerationProgress } from "@/hooks/useGenerationProgress";
 import type { Customer, OutreachLog } from "@/lib/db/schema";
 import type { Violation } from "@/types";
-import ViolationHighlighter from "./ViolationHighlighter";
-import { cn } from "@/lib/utils";
 
 type Props = {
   customer: Customer;
@@ -19,37 +25,17 @@ type Result = {
   logId: string | null;
 };
 
-const typeLabels: Record<string, string> = {
-  email:       "Email",
-  sms:         "SMS",
-  call_script: "Call Script",
-};
-
-const segBase =
-  "px-3.5 py-1.5 border-r last:border-r-0 border-border text-[13px] cursor-pointer text-muted hover:bg-border-muted hover:text-ink transition-all";
-
-const modeBadgeCn = (mode: string) =>
-  cn(
-    "inline-block px-2 py-0.5 rounded-full text-[11px] font-medium",
-    mode === "guarded"
-      ? "bg-accent-light text-accent border border-accent-mid"
-      : "bg-danger-light text-danger border border-danger-mid"
-  );
-
-const historyBadgeCn = (isGuarded: boolean) =>
-  cn(
-    "inline-block px-1.5 py-0.5 rounded-full text-[11px] font-medium",
-    isGuarded
-      ? "bg-accent-light text-accent border border-accent-mid"
-      : "bg-danger-light text-danger border border-danger-mid"
-  );
+type OutreachType = "email" | "sms" | "call_script";
+type OutreachMode = "guarded" | "unguarded";
 
 const GeneratePanel = ({ customer, logs }: Props) => {
-  const [type, setType]       = useState<"email" | "sms" | "call_script">("email");
-  const [mode, setMode]       = useState<"guarded" | "unguarded">("guarded");
+  const [type, setType] = useState<OutreachType>("email");
+  const [mode, setMode] = useState<OutreachMode>("guarded");
   const [loading, setLoading] = useState(false);
-  const [result, setResult]   = useState<Result | null>(null);
-  const [error, setError]     = useState("");
+  const [result, setResult] = useState<Result | null>(null);
+  const [error, setError] = useState("");
+  const { progress, progressLabel, completeProgress, resetProgress } =
+    useGenerationProgress(loading);
 
   const generate = async () => {
     setLoading(true);
@@ -62,178 +48,91 @@ const GeneratePanel = ({ customer, logs }: Props) => {
         type,
         mode,
       });
+      completeProgress();
       setResult(data);
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("An unexpected error occurred.");
-      }
+      resetProgress();
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data?.error ?? "An unexpected error occurred.")
+        : err instanceof Error
+          ? err.message
+          : "An unexpected error occurred.";
+      setError(message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTypeChange = (next: OutreachType) => {
+    setType(next);
+    setResult(null);
+    setError("");
   };
 
   return (
     <div className="bg-surface border border-border rounded-xl px-6 py-6 shadow-xs flex flex-col gap-5">
       <h3 className="font-serif text-[19px] font-normal text-ink">Generate Outreach</h3>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-end gap-4">
+      <OutreachControls
+        type={type}
+        mode={mode}
+        loading={loading}
+        onTypeChange={handleTypeChange}
+        onModeChange={setMode}
+        onGenerate={generate}
+      />
 
-        {/* Type toggle */}
+      {loading && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
-            Message Type
-          </label>
-          <div className="flex border border-border rounded-md overflow-hidden">
-            {(["email", "sms", "call_script"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setType(t)}
-                className={cn(segBase, type === t && "bg-ink text-canvas")}
-              >
-                {typeLabels[t]}
-              </button>
-            ))}
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-muted">{progressLabel}</span>
+            <span className="text-[12px] font-mono font-medium text-ink">
+              {progress}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-200 ease-out",
+                mode === "guarded" ? "bg-accent" : "bg-danger"
+              )}
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
+      )}
 
-        {/* Mode toggle */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
-            Mode
-          </label>
-          <div className="flex border border-border rounded-md overflow-hidden">
-            <button
-              onClick={() => setMode("guarded")}
-              className={cn(segBase, mode === "guarded" && "bg-accent text-white")}
-            >
-              Guarded
-            </button>
-            <button
-              onClick={() => setMode("unguarded")}
-              className={cn(segBase, mode === "unguarded" && "bg-danger text-white")}
-            >
-              Unguarded
-            </button>
-          </div>
-        </div>
-
-        {/* Generate button */}
-        <button
-          onClick={generate}
-          disabled={loading}
-          className={cn(
-            "self-end px-5 py-2 rounded-md text-[14px] font-medium cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:opacity-85",
-            mode === "guarded" ? "bg-accent" : "bg-danger"
-          )}
-        >
-          {loading ? "Generating…" : `Generate ${typeLabels[type]}`}
-        </button>
-      </div>
-
-      {/* Unguarded warning */}
       {mode === "unguarded" && (
         <div className="px-3.5 py-2.5 bg-danger-light border border-danger-mid rounded-md text-[13px] text-danger">
           Unguarded mode — AI generates without verified context. Violations expected.
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div className="px-3.5 py-2.5 bg-danger-light border border-danger-mid rounded-md text-[13px] text-danger">
           {error}
         </div>
       )}
 
-      {/* Result */}
       {result && (
-        <div className={cn("rounded-xl border overflow-hidden", result.verified ? "border-accent-mid" : "border-danger-mid")}>
-
-          {/* Result header */}
-          <div className={cn(
-            "px-4 py-3 border-b flex items-center gap-2.5",
-            result.verified ? "bg-accent-light border-accent-mid" : "bg-danger-light border-danger-mid"
-          )}>
-            <span className={cn("text-[13px] font-semibold", result.verified ? "text-accent" : "text-danger")}>
-              {result.verified ? "✓ Verified — No Violations" : "⚠ Violations Detected"}
-            </span>
-            <span className={modeBadgeCn(mode)}>{mode}</span>
-          </div>
-
-          {/* Generated text */}
-          <div className="px-4 py-4 bg-surface">
-            <ViolationHighlighter text={result.text} violations={result.violations} />
-          </div>
-
-          {/* Violations breakdown */}
-          {result.violations.length > 0 && (
-            <div className="px-4 py-4 bg-danger-light border-t border-danger-mid">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.5px] text-danger mb-3">
-                Detected Violations
-              </h4>
-              <div className="flex flex-col gap-2">
-                {result.violations.map((v, i) => (
-                  <div key={i} className="flex items-baseline gap-3">
-                    <span className="font-mono text-[12px] font-medium text-danger min-w-[100px]">
-                      {v.field}
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[12px] text-accent">
-                        Expected: <strong>{v.expected}</strong>
-                      </span>
-                      <span className="text-[12px] text-danger">
-                        Found: <strong>{v.found}</strong>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="flex flex-col gap-3">
+          <div className="rounded-xl border border-border overflow-hidden">
+            <div className="px-4 py-2.5 bg-canvas border-b border-border flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
+                Generated {typeLabels[type]}
+              </span>
+              <Badge label={mode} variant={mode === "guarded" ? "accent" : "danger"} />
             </div>
-          )}
+            <div className="px-5 py-4 bg-surface">
+              <ViolationHighlighter text={result.text} violations={result.violations} />
+            </div>
+          </div>
+
+          <VerificationResult verified={result.verified} violations={result.violations} />
         </div>
       )}
 
-      {/* History */}
-      {logs.length > 0 && (
-        <div className="pt-5 border-t border-border-muted">
-          <h4 className="text-[13px] font-semibold uppercase tracking-[0.5px] text-muted mb-3">
-            Generation History
-          </h4>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-canvas border-b border-border">
-                {["Type", "Mode", "Result", "Date"].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.6px] text-muted">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id} className="border-b border-border-muted last:border-b-0">
-                  <td className="px-3 py-2 text-[12px] font-mono text-ink">
-                    {log.type.replace("_", " ")}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className={historyBadgeCn(log.mode === "guarded")}>{log.mode}</span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className={historyBadgeCn(log.verified ?? false)}>
-                      {log.verified ? "Clean" : "Violations"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-[11px] font-mono text-muted">
-                    {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <GenerationHistory logs={logs} />
     </div>
   );
 };
