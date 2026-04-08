@@ -12,9 +12,7 @@ describe("ViolationHighlighter — no violations", () => {
   });
 
   it("renders no <mark> elements", () => {
-    const { container } = render(
-      <ViolationHighlighter text={TEXT} violations={[]} />
-    );
+    const { container } = render(<ViolationHighlighter text={TEXT} violations={[]} />);
     expect(container.querySelectorAll("mark")).toHaveLength(0);
   });
 });
@@ -64,8 +62,7 @@ describe("ViolationHighlighter — violation not found in text", () => {
 });
 
 describe("ViolationHighlighter — multiple violations", () => {
-  const multiText =
-    "Hello Jane Smith, you owe $999.00 by March 01.";
+  const multiText = "Hello Jane Smith, you owe $999.00 by March 01.";
 
   const violations: Violation[] = [
     { field: "amountDue", expected: "$250.00", found: "$999.00" },

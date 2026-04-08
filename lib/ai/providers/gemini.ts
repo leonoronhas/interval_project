@@ -24,7 +24,7 @@ const isRetryable = (err: unknown): boolean => {
 const withRetry = async <T>(
   fn: () => Promise<T>,
   maxAttempts = 3,
-  baseDelayMs = 1000,
+  baseDelayMs = 1000
 ): Promise<T> => {
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {

@@ -7,9 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const loginSchema = Yup.object({
-  email: Yup.string()
-    .email("Enter a valid email address")
-    .required("Email is required"),
+  email: Yup.string().email("Enter a valid email address").required("Email is required"),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
@@ -38,13 +36,14 @@ const LoginPage = () => {
   const inputCn = (touched: boolean | undefined, error: string | undefined) =>
     cn(
       "px-3 py-2 border rounded-md bg-canvas text-ink text-sm outline-none transition-colors placeholder:text-faint",
-      touched && error ? "border-danger focus:border-danger" : "border-border focus:border-ink"
+      touched && error
+        ? "border-danger focus:border-danger"
+        : "border-border focus:border-ink"
     );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
       <div className="w-full max-w-sm bg-surface border border-border rounded-xl p-10 shadow-md">
-
         {/* Header */}
         <div className="flex flex-col items-center gap-3 mb-8">
           <div className="w-11 h-11 bg-ink rounded-lg flex items-center justify-center font-serif text-canvas text-sm tracking-wide">
@@ -56,7 +55,6 @@ const LoginPage = () => {
 
         {/* Form */}
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
-
           {/* Email */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="text-[13px] font-medium text-ink">
