@@ -17,10 +17,16 @@ vi.mock("@/lib/ai/groundingEngine", () => ({
   generateUnguarded: vi.fn(),
 }));
 
+// Rate limiter is always open in unit tests — its behaviour is tested separately
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: vi.fn(() => ({ limited: false })),
+}));
+
 import { POST } from "@/app/api/generate-message/route";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerById, insertOutreachLog } from "@/lib/db/queries";
 import { generateGuarded, generateUnguarded } from "@/lib/ai/groundingEngine";
+import { AllProvidersFailedError } from "@/lib/ai/provider";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -32,7 +38,7 @@ const makeRequest = (body: object) =>
   });
 
 const mockCustomer: Customer = {
-  id: "cust-uuid",
+  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   accountId: "ACC-001",
   fullName: "Jane Doe",
   email: "jane@example.com",
@@ -44,7 +50,7 @@ const mockCustomer: Customer = {
   createdAt: new Date("2026-01-01"),
 };
 
-const mockUser = { id: "user-uuid-1" };
+const mockUser = { id: "11111111-2222-3333-4444-555555555555" };
 
 const mockGenerationResult = {
   text: "Hello Jane, your balance of $250.00 is due.",
@@ -76,6 +82,61 @@ describe("POST /api/generate-message — auth", () => {
   });
 });
 
+// ── Input validation ────────────────────────────────────────────────────────
+
+describe("POST /api/generate-message — input validation", () => {
+  beforeEach(() => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+    } as never);
+  });
+
+  it("returns 400 when customerId is missing", async () => {
+    const res = await POST(makeRequest({ type: "email", mode: "guarded" }) as never);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid request");
+  });
+
+  it("returns 400 when customerId is not a valid UUID", async () => {
+    const res = await POST(
+      makeRequest({ customerId: "not-a-uuid", type: "email", mode: "guarded" }) as never
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid request");
+  });
+
+  it("returns 400 when type is an invalid value", async () => {
+    const res = await POST(
+      makeRequest({ customerId: "cust-uuid", type: "letter", mode: "guarded" }) as never
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid request");
+  });
+
+  it("returns 400 when mode is an invalid value", async () => {
+    const res = await POST(
+      makeRequest({ customerId: "cust-uuid", type: "email", mode: "safe" }) as never
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Invalid request");
+  });
+
+  it("returns 400 when the request body is not valid JSON", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/generate-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{ this is not json }",
+      }) as never
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 // ── Customer lookup ─────────────────────────────────────────────────────────
 
 describe("POST /api/generate-message — customer lookup", () => {
@@ -88,7 +149,11 @@ describe("POST /api/generate-message — customer lookup", () => {
 
   it("returns 404 when the customer does not exist", async () => {
     const res = await POST(
-      makeRequest({ customerId: "missing-id", type: "email", mode: "guarded" }) as never
+      makeRequest({
+        customerId: "00000000-0000-0000-0000-000000000000",
+        type: "email",
+        mode: "guarded",
+      }) as never
     );
     expect(res.status).toBe(404);
     const body = await res.json();
@@ -242,5 +307,52 @@ describe("POST /api/generate-message — success response", () => {
       violations: [],
       logId: "log-uuid",
     });
+  });
+});
+
+// ── Provider fallback ────────────────────────────────────────────────────────
+
+describe("POST /api/generate-message — provider fallback", () => {
+  beforeEach(() => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: mockUser } }) },
+    } as never);
+    vi.mocked(getCustomerById).mockResolvedValue(mockCustomer);
+  });
+
+  it("returns 503 with a user-friendly message when all AI providers fail", async () => {
+    vi.mocked(generateGuarded).mockRejectedValue(
+      new AllProvidersFailedError([
+        { provider: "anthropic", error: new Error("500") },
+        { provider: "openai", error: new Error("500") },
+        { provider: "gemini", error: new Error("500") },
+      ])
+    );
+
+    const res = await POST(
+      makeRequest({
+        customerId: mockCustomer.id,
+        type: "email",
+        mode: "guarded",
+      }) as never
+    );
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toMatch(/unavailable/i);
+  });
+
+  it("re-throws non-AllProvidersFailedError errors", async () => {
+    vi.mocked(generateGuarded).mockRejectedValue(new TypeError("unexpected bug"));
+
+    await expect(
+      POST(
+        makeRequest({
+          customerId: mockCustomer.id,
+          type: "email",
+          mode: "guarded",
+        }) as never
+      )
+    ).rejects.toThrow(TypeError);
   });
 });
