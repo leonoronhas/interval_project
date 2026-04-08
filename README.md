@@ -1,9 +1,9 @@
 # Interval Guard
 
-[![Build](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml/badge.svg?label=build&event=push)](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml)
-[![Lint](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml/badge.svg?label=lint&event=push)](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml)
-[![Tests](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml/badge.svg?label=tests&event=push)](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml)
-[![Prettier](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml/badge.svg?label=prettier&event=push)](https://github.com/leonoronhas/interval_project/actions/workflows/ci.yml)
+[![Build](https://github.com/leonoronhas/interval_project/actions/workflows/build.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/build.yml)
+[![Lint](https://github.com/leonoronhas/interval_project/actions/workflows/lint.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/lint.yml)
+[![Tests](https://github.com/leonoronhas/interval_project/actions/workflows/test.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/test.yml)
+[![Prettier](https://github.com/leonoronhas/interval_project/actions/workflows/prettier.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/prettier.yml)
 
 An AI-powered collections outreach tool that generates factually verified customer messages — and deliberately demonstrates what happens when those guardrails are removed.
 
