@@ -100,8 +100,20 @@ GEMINI_API_KEY=...
 ### 3. Run database migrations
 
 ```bash
-npx drizzle-kit push
+npm run migrate
 ```
+
+This applies all pending SQL migration files from the `drizzle/` folder to your database.
+
+**Changing the schema:** Edit `lib/db/schema.ts`, then generate a new migration file and commit it:
+
+```bash
+npx drizzle-kit generate   # creates a new file in drizzle/
+npm run migrate             # applies it to the database
+git add drizzle/ && git commit -m "migration: describe the change"
+```
+
+Do not use `drizzle-kit push` — it bypasses migration history.
 
 ### 4. Start the dev server
 
@@ -115,25 +127,27 @@ Open [http://localhost:3000](http://localhost:3000). You will be redirected to t
 
 ## Available scripts
 
-| Command          | Description                          |
-| ---------------- | ------------------------------------ |
-| `npm run dev`    | Start the Next.js development server |
-| `npm run build`  | Production build                     |
-| `npm run start`  | Start the production server          |
-| `npm run test`   | Run tests in watch mode              |
-| `npm run lint`   | Run ESLint                           |
-| `npm run format` | Auto-format all files with Prettier  |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start the Next.js development server |
+| `npm run build`         | Production build                     |
+| `npm run start`         | Start the production server          |
+| `npm run test`          | Run tests in watch mode              |
+| `npm run test:coverage` | Run tests once with coverage report  |
+| `npm run migrate`       | Apply pending database migrations    |
+| `npm run lint`          | Run ESLint                           |
+| `npm run format`        | Auto-format all files with Prettier  |
 
 ---
 
 ## Running tests
 
 ```bash
-# Run all tests once (CI mode)
-npx vitest run
-
 # Run in watch mode during development
 npm run test
+
+# Run all tests once with coverage report (CI mode)
+npm run test:coverage
 ```
 
 Tests live in `__tests__/` and mirror the `app/`, `components/`, `hooks/`, and `lib/` directories. They use Vitest with jsdom and Testing Library. All external API and database calls are mocked so no real credentials are required to run the test suite.
@@ -151,6 +165,20 @@ AI_PROVIDER=gemini      # Gemini
 ```
 
 The adapter pattern in `lib/ai/provider.ts` means adding a new provider is a matter of implementing the `AIAdapter` interface and registering it — no changes needed in the generation or verification logic.
+
+---
+
+## Security model
+
+Authentication and authorization are enforced at three layers:
+
+| Layer          | Mechanism                                                                                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pages**      | `proxy.ts` refreshes the Supabase session cookie on every request and redirects unauthenticated users away from `/dashboard` and `/customers/*`                                                                 |
+| **API routes** | `/api/generate-message` calls `auth.getUser()` and returns `401` if no valid session is present                                                                                                                 |
+| **Database**   | `DATABASE_URL` must be configured with a **least-privilege Postgres role** — SELECT on `customers`, SELECT + INSERT on `outreach_log`. Do not use a superuser or the Supabase service role for this connection. |
+
+**Important — RLS note:** `supabase/schema.sql` defines Row-Level Security policies on both tables. These policies are **not enforced** by the Drizzle queries in this app, which connect via `DATABASE_URL` using a direct Postgres role rather than the Supabase JS client. Security relies on the application-layer checks above and the role permissions on the database connection string.
 
 ---
 
