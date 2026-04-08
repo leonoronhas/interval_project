@@ -2,8 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { AIAdapter } from "../types";
 
 let _client: Anthropic | null = null;
+
 const getClient = () => {
-  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  if (!_client) {
+    _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
   return _client;
 };
 

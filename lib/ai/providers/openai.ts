@@ -2,8 +2,11 @@ import OpenAI from "openai";
 import type { AIAdapter, AIMessage } from "../types";
 
 let _client: OpenAI | null = null;
+
 const getClient = () => {
-  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!_client) {
+    _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
   return _client;
 };
 
