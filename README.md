@@ -3,6 +3,7 @@
 [![Build](https://github.com/leonoronhas/interval_project/actions/workflows/build.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/build.yml)
 [![Lint](https://github.com/leonoronhas/interval_project/actions/workflows/lint.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/lint.yml)
 [![Tests](https://github.com/leonoronhas/interval_project/actions/workflows/test.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/leonoronhas/interval_project/branch/main/graph/badge.svg)](https://codecov.io/gh/leonoronhas/interval_project)
 [![Prettier](https://github.com/leonoronhas/interval_project/actions/workflows/prettier.yml/badge.svg)](https://github.com/leonoronhas/interval_project/actions/workflows/prettier.yml)
 
 An AI-powered collections outreach tool that generates factually verified customer messages — and deliberately demonstrates what happens when those guardrails are removed.
