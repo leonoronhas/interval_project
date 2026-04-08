@@ -8,13 +8,18 @@ export const POST = async (request: NextRequest) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { customerId, type, mode } = await request.json();
 
   const customer = await getCustomerById(customerId);
-  if (!customer)
+
+  if (!customer) {
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+  }
 
   const result =
     mode === "guarded"
