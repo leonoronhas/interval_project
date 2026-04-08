@@ -2,7 +2,23 @@ import { getAIProvider } from "./provider";
 import type { Customer } from "@/lib/db/schema";
 import type { Violation } from "@/types";
 
-const verifyFacts = async (generatedText: string, customer: Customer) => {
+type VerifyResult = {
+  violations: Violation[];
+  verified: boolean;
+  verificationError?: boolean;
+};
+
+type GenerationResult = {
+  text: string;
+  violations: Violation[];
+  verified: boolean;
+  verificationError?: boolean;
+};
+
+const verifyFacts = async (
+  generatedText: string,
+  customer: Customer
+): Promise<VerifyResult> => {
   const ai = getAIProvider();
 
   const system = `You are a compliance auditor. Your only job is to detect factual errors in AI-generated messages. Respond only with valid JSON.`;
@@ -32,11 +48,14 @@ If no violations: { "violations": [] }`;
     const violations: Violation[] = parsed.violations ?? [];
     return { violations, verified: violations.length === 0 };
   } catch {
-    return { violations: [], verified: true };
+    return { violations: [], verified: false, verificationError: true };
   }
 };
 
-export const generateGuarded = async (customer: Customer, type: string) => {
+export const generateGuarded = async (
+  customer: Customer,
+  type: string
+): Promise<GenerationResult> => {
   const ai = getAIProvider();
 
   const system = `You are a professional collections agent for Interval AI.
@@ -64,11 +83,14 @@ Status     : ${customer.status}
     { role: "user", content: `Generate the ${type} now.` },
   ]);
 
-  const { violations, verified } = await verifyFacts(text, customer);
-  return { text, violations, verified };
+  const { violations, verified, verificationError } = await verifyFacts(text, customer);
+  return { text, violations, verified, ...(verificationError && { verificationError }) };
 };
 
-export const generateUnguarded = async (customer: Customer, type: string) => {
+export const generateUnguarded = async (
+  customer: Customer,
+  type: string
+): Promise<GenerationResult> => {
   const ai = getAIProvider();
 
   const system = `You are a collections agent. Generate a ${type} for a customer with an overdue balance. Be specific with amounts and plan details.`;
@@ -80,6 +102,6 @@ export const generateUnguarded = async (customer: Customer, type: string) => {
     },
   ]);
 
-  const { violations, verified } = await verifyFacts(text, customer);
-  return { text, violations, verified };
+  const { violations, verified, verificationError } = await verifyFacts(text, customer);
+  return { text, violations, verified, ...(verificationError && { verificationError }) };
 };
