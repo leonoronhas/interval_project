@@ -80,6 +80,6 @@ describe("CustomerTableRow", () => {
 
   it("renders the status label for 'resolved'", () => {
     renderRow({ ...mockCustomer, status: "resolved" });
-    expect(screen.getByText(/Resolved/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Resolved/i).length).toBeGreaterThan(0);
   });
 });

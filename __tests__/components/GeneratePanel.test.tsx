@@ -8,6 +8,12 @@ vi.mock("axios", () => ({
     isAxiosError: vi.fn((e) => e?.isAxiosErr === true),
   },
 }));
+
+const mockRefresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
+
 import GeneratePanel from "@/components/GeneratePanel";
 import type { Customer, OutreachLog } from "@/lib/db/schema";
 
