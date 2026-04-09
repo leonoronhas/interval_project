@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { typeLabels } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
@@ -29,6 +30,7 @@ type OutreachType = "email" | "sms" | "call_script";
 type OutreachMode = "guarded" | "unguarded";
 
 const GeneratePanel = ({ customer, logs }: Props) => {
+  const router = useRouter();
   const [type, setType] = useState<OutreachType>("email");
   const [mode, setMode] = useState<OutreachMode>("guarded");
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,7 @@ const GeneratePanel = ({ customer, logs }: Props) => {
       });
       completeProgress();
       setResult(data);
+      router.refresh();
     } catch (err) {
       resetProgress();
       const message = axios.isAxiosError(err)
