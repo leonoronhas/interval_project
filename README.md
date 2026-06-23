@@ -43,23 +43,28 @@ Every generation — its mode, provider, output, verification result, and any vi
 
 ```
 app/
-  api/generate-message/   # POST endpoint — generates and verifies a message
-  dashboard/              # Protected dashboard (customer table + activity feed)
-  login/                  # Auth page
+  api/generate-message/    # POST endpoint — generates and verifies a message
+  dashboard/               # Protected dashboard (customer table + activity feed)
+  customers/[id]/          # Protected customer detail + generation panel
+  login/                   # Auth page
 components/
-  GeneratePanel.tsx        # Slide-in panel for selecting type and mode
-  ViolationHighlighter.tsx # Highlights detected factual violations in the output
-  ActivityFeed.tsx         # Recent outreach log sidebar
+  GeneratePanel.tsx         # Slide-in panel for selecting type and mode
+  OutreachLogDetail.tsx     # Shared modal for viewing a logged generation
+  ViolationHighlighter.tsx  # Highlights detected factual violations in the output
+  ActivityFeed.tsx          # Recent outreach log sidebar
 lib/
   ai/
-    groundingEngine.ts    # Core guarded/unguarded generation + verification logic
-    provider.ts           # Adapter selector (reads AI_PROVIDER env var)
-    providers/            # Thin wrappers for Anthropic, OpenAI, Gemini
+    groundingEngine.ts     # Core guarded/unguarded generation + verification logic
+    provider.ts            # Adapter selector + provider fallback chain
+    providers/             # Thin wrappers for Anthropic, OpenAI, Gemini
+  auth/dal.ts              # Data Access Layer — enforces auth close to the data
   db/
-    schema.ts             # Drizzle schema — customers + outreach_log tables
-    queries.ts            # Typed query helpers
-  supabase/               # Server/client/middleware Supabase instances
-__tests__/                # Unit tests mirroring the src structure
+    schema.ts              # Drizzle schema — customers + outreach_log tables
+    queries.ts             # Typed query helpers
+  format.ts                # Money formatting
+  supabase/                # Server/client/middleware Supabase instances
+supabase/schema.sql        # Canonical SQL schema — tables, RLS policies, seed data
+__tests__/                 # Unit tests mirroring the source structure
 ```
 
 ---
@@ -90,30 +95,25 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
 
-# AI provider — pick one: "anthropic" | "openai" | "gemini"
-AI_PROVIDER=anthropic
+# AI provider — pick one: "anthropic" | "openai" | "gemini" (default: gemini)
+# Only the key for the selected provider is required.
+AI_PROVIDER=gemini
+GEMINI_API_KEY=...
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
-GEMINI_API_KEY=...
 ```
 
-### 3. Run database migrations
+### 3. Set up the database
+
+Apply [`supabase/schema.sql`](supabase/schema.sql) to your Supabase project — paste it into the Supabase SQL Editor, or run it with `psql`:
 
 ```bash
-npm run migrate
+psql "$DATABASE_URL" -f supabase/schema.sql
 ```
 
-This applies all pending SQL migration files from the `drizzle/` folder to your database.
+This creates the `customers` and `outreach_log` tables, enables Row-Level Security with the documented policies, and seeds a set of demo customers so the dashboard has data on first load.
 
-**Changing the schema:** Edit `lib/db/schema.ts`, then generate a new migration file and commit it:
-
-```bash
-npx drizzle-kit generate   # creates a new file in drizzle/
-npm run migrate             # applies it to the database
-git add drizzle/ && git commit -m "migration: describe the change"
-```
-
-Do not use `drizzle-kit push` — it bypasses migration history.
+**Schema source of truth:** `supabase/schema.sql` is canonical — it also carries the RLS policies and seed data. `lib/db/schema.ts` is the Drizzle mirror that backs the app's typed query layer; keep the two in sync if you change either.
 
 ### 4. Start the dev server
 
@@ -158,10 +158,10 @@ Async Server Components and infrastructure modules (`lib/db`, `lib/supabase`) ar
 
 | Metric     | Coverage | Threshold |
 | ---------- | -------- | --------- |
-| Statements | 98.2%    | 70%       |
-| Branches   | 85.5%    | 70%       |
-| Functions  | 95.3%    | 70%       |
-| Lines      | 98.2%    | 70%       |
+| Statements | 98.97%   | 70%       |
+| Branches   | 88.09%   | 70%       |
+| Functions  | 100%     | 70%       |
+| Lines      | 98.95%   | 70%       |
 
 ---
 
@@ -170,10 +170,12 @@ Async Server Components and infrastructure modules (`lib/db`, `lib/supabase`) ar
 Set `AI_PROVIDER` in your `.env.local` to any of the supported values:
 
 ```bash
-AI_PROVIDER=anthropic   # Claude (default)
+AI_PROVIDER=gemini      # Gemini (default — has a free tier, so the app runs without a paid key)
+AI_PROVIDER=anthropic   # Claude
 AI_PROVIDER=openai      # GPT
-AI_PROVIDER=gemini      # Gemini
 ```
+
+If `AI_PROVIDER` is unset, the app defaults to `gemini`. Whichever provider you pick, the others act as an automatic fallback chain if the primary call fails.
 
 The adapter pattern in `lib/ai/provider.ts` means adding a new provider is a matter of implementing the `AIAdapter` interface and registering it — no changes needed in the generation or verification logic.
 
