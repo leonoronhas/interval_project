@@ -8,6 +8,7 @@ import {
   jsonb,
   timestamp,
 } from "drizzle-orm/pg-core";
+import type { Violation } from "@/types";
 
 export const customers = pgTable("customers", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -33,7 +34,7 @@ export const outreachLog = pgTable("outreach_log", {
   mode: text("mode", { enum: ["guarded", "unguarded"] }).notNull(),
   generatedText: text("generated_text").notNull(),
   verified: boolean("verified").default(false),
-  violations: jsonb("violations"),
+  violations: jsonb("violations").$type<Violation[]>(),
   createdBy: uuid("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });

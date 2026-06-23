@@ -15,3 +15,15 @@ export const statusLabel: Record<string, string> = {
   contacted: "Contacted",
   resolved: "Resolved",
 };
+
+// Domain → Badge mappings. One place for the rule "guarded/verified is accent,
+// unguarded/unverified is danger" so it stops drifting across render sites.
+// Spread into <Badge>: `<Badge {...modeBadge(log.mode)} />`.
+export const modeBadge = (mode: "guarded" | "unguarded") =>
+  ({ label: mode, variant: mode === "guarded" ? "accent" : "danger" }) as const;
+
+export const verifiedBadge = (verified: boolean | null) =>
+  ({
+    label: verified ? "Clean" : "Violations",
+    variant: verified ? "accent" : "danger",
+  }) as const;
