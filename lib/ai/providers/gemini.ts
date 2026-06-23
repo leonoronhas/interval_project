@@ -44,7 +44,7 @@ const withRetry = async <T>(
 export const geminiAdapter: AIAdapter = {
   complete: async (system, messages: AIMessage[], maxTokens = 600) => {
     const model = getClient().getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3.1-flash-lite",
       systemInstruction: system,
       generationConfig: { maxOutputTokens: maxTokens },
     });
