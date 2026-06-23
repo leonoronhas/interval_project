@@ -4,9 +4,12 @@ import { getAllCustomers, getRecentLogs } from "@/lib/db/queries";
 import SignOutButton from "@/components/SignOutButton";
 import { CustomerTableRow } from "@/components/CustomerTableRow";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { verifySession } from "@/lib/auth/dal";
 import { cn } from "@/lib/utils";
 
 const DashboardPage = async () => {
+  await verifySession();
+
   const [customers, recentLogs] = await Promise.all([
     getAllCustomers(),
     getRecentLogs(5),
