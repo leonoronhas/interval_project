@@ -24,6 +24,40 @@ Every generation — its mode, provider, output, verification result, and any vi
 
 ---
 
+## Quickstart
+
+Up and running locally in ~10 minutes — no paid key required (Gemini has a free tier).
+
+1. **Clone & install**
+
+   ```bash
+   git clone https://github.com/leonoronhas/interval_project.git
+   cd interval_project && npm install
+   ```
+
+2. **Create a free [Supabase](https://supabase.com) project**, open its **SQL Editor**, and run [`supabase/schema.sql`](supabase/schema.sql) — this creates the tables, RLS policies, and seed customers.
+
+3. **Get a free Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey).
+
+4. **Configure env** — copy the template and fill in four values:
+
+   ```bash
+   cp .env.example .env.local
+   # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, DATABASE_URL, GEMINI_API_KEY
+   ```
+
+5. **Run it**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000), sign up via Supabase Auth, and you'll land on the dashboard with seeded customers. Open one and generate a **guarded** vs. an **unguarded** message to watch the verification pass flag (or miss) hallucinated facts.
+
+Detailed configuration and the security model are in [Getting started](#getting-started) below.
+
+---
+
 ## Tech stack
 
 | Layer        | Technology                                                          |
