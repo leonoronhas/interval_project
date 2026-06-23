@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getCustomerById, getLogsByCustomerId } from "@/lib/db/queries";
 import GeneratePanel from "@/components/GeneratePanel";
 import SignOutButton from "@/components/SignOutButton";
+import { verifySession } from "@/lib/auth/dal";
 import { cn } from "@/lib/utils";
 import { statusStyles, statusLabel } from "@/lib/constants";
 
@@ -13,6 +14,8 @@ type Props = {
 };
 
 const CustomerPage = async ({ params }: Props) => {
+  await verifySession();
+
   const { id } = await params;
 
   const [customer, logs] = await Promise.all([
