@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { statusStyles, statusLabel } from "@/lib/constants";
 import type { Customer } from "@/lib/db/schema";
 
@@ -21,7 +22,7 @@ export const CustomerTableRow = ({ customer }: { customer: Customer }) => {
       </td>
       <td className="px-3.5 py-3 text-[13px] text-ink">{customer.plan}</td>
       <td className="px-3.5 py-3 text-[13px] font-mono font-medium text-ink">
-        ${Number(customer.amountDue).toFixed(2)}
+        {formatMoney(customer.amountDue)}
       </td>
       <td className="px-3.5 py-3 text-[13px] font-mono text-ink">{customer.dueDate}</td>
       <td className="px-3.5 py-3">

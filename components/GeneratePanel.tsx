@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { typeLabels } from "@/lib/constants";
+import { typeLabels, modeBadge } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
 import { VerificationResult } from "@/components/VerificationResult";
 import ViolationHighlighter from "@/components/ViolationHighlighter";
@@ -136,7 +136,7 @@ const GeneratePanel = ({ customer, logs }: Props) => {
               <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
                 Generated {typeLabels[type]}
               </span>
-              <Badge label={mode} variant={mode === "guarded" ? "accent" : "danger"} />
+              <Badge {...modeBadge(mode)} />
             </div>
             <div className="px-5 py-4 bg-surface">
               <ViolationHighlighter text={result.text} violations={result.violations} />
