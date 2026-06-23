@@ -7,6 +7,7 @@ import GeneratePanel from "@/components/GeneratePanel";
 import SignOutButton from "@/components/SignOutButton";
 import { verifySession } from "@/lib/auth/dal";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 import { statusStyles, statusLabel } from "@/lib/constants";
 
 type Props = {
@@ -83,7 +84,7 @@ const CustomerPage = async ({ params }: Props) => {
                 { label: "Plan", value: customer.plan },
                 {
                   label: "Amount Due",
-                  value: `$${Number(customer.amountDue).toFixed(2)}`,
+                  value: formatMoney(customer.amountDue),
                   mono: true,
                   highlight: true,
                 },

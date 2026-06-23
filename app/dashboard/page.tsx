@@ -6,6 +6,7 @@ import { CustomerTableRow } from "@/components/CustomerTableRow";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { verifySession } from "@/lib/auth/dal";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 
 const DashboardPage = async () => {
   await verifySession();
@@ -45,7 +46,7 @@ const DashboardPage = async () => {
           <div className="grid grid-cols-4 gap-3 mb-5">
             {[
               {
-                value: `$${totalDue.toFixed(2)}`,
+                value: formatMoney(totalDue),
                 label: "Total Outstanding",
                 mono: true,
               },

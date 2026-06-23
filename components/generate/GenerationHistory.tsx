@@ -1,11 +1,7 @@
-import { cn } from "@/lib/utils";
-import { typeLabels } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
-import { Modal, ModalHeader, ModalBody } from "@/components/ui/Modal";
-import { VerificationResult } from "@/components/VerificationResult";
-import ViolationHighlighter from "@/components/ViolationHighlighter";
+import { modeBadge, verifiedBadge } from "@/lib/constants";
+import { OutreachLogDetail } from "@/components/OutreachLogDetail";
 import type { OutreachLog } from "@/lib/db/schema";
-import type { Violation } from "@/types";
 import { useState } from "react";
 
 type Props = {
@@ -18,8 +14,6 @@ export const GenerationHistory = ({ logs }: Props) => {
   if (logs.length === 0) {
     return null;
   }
-
-  const violations = (selectedLog?.violations as Violation[]) ?? [];
 
   return (
     <>
@@ -51,16 +45,10 @@ export const GenerationHistory = ({ logs }: Props) => {
                   {log.type.replace("_", " ")}
                 </td>
                 <td className="px-3 py-2">
-                  <Badge
-                    label={log.mode}
-                    variant={log.mode === "guarded" ? "accent" : "danger"}
-                  />
+                  <Badge {...modeBadge(log.mode)} />
                 </td>
                 <td className="px-3 py-2">
-                  <Badge
-                    label={log.verified ? "Clean" : "Violations"}
-                    variant={(log.verified ?? false) ? "accent" : "danger"}
-                  />
+                  <Badge {...verifiedBadge(log.verified)} />
                 </td>
                 <td className="px-3 py-2 text-[11px] font-mono text-muted">
                   {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""}
@@ -71,53 +59,7 @@ export const GenerationHistory = ({ logs }: Props) => {
         </table>
       </div>
 
-      <Modal open={selectedLog !== null} onClose={() => setSelectedLog(null)}>
-        {selectedLog && (
-          <>
-            <ModalHeader onClose={() => setSelectedLog(null)}>
-              <span className="font-serif text-[17px] text-ink capitalize">
-                {typeLabels[selectedLog.type]}
-              </span>
-              <Badge
-                label={selectedLog.mode}
-                variant={selectedLog.mode === "guarded" ? "accent" : "danger"}
-              />
-              <Badge
-                label={selectedLog.verified ? "Clean" : "Violations"}
-                variant={(selectedLog.verified ?? false) ? "accent" : "danger"}
-              />
-            </ModalHeader>
-
-            <ModalBody>
-              <div className="rounded-lg border border-border overflow-hidden">
-                <div className="px-4 py-2 bg-canvas border-b border-border">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-muted">
-                    Generated {typeLabels[selectedLog.type]}
-                  </span>
-                </div>
-                <div className="px-4 py-3 bg-surface max-h-[320px] overflow-y-auto">
-                  <ViolationHighlighter
-                    text={selectedLog.generatedText}
-                    violations={violations}
-                  />
-                </div>
-              </div>
-
-              <VerificationResult
-                verified={selectedLog.verified}
-                violations={violations}
-              />
-
-              <div className="flex items-center gap-4 text-[11px] font-mono text-faint">
-                <span>ID: {selectedLog.id}</span>
-                {selectedLog.createdAt && (
-                  <span>{new Date(selectedLog.createdAt).toLocaleString()}</span>
-                )}
-              </div>
-            </ModalBody>
-          </>
-        )}
-      </Modal>
+      <OutreachLogDetail log={selectedLog} onClose={() => setSelectedLog(null)} />
     </>
   );
 };

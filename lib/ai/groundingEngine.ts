@@ -1,4 +1,5 @@
 import { getAIProvider } from "./provider";
+import { formatMoney } from "@/lib/format";
 import type { Customer } from "@/lib/db/schema";
 import type { Violation } from "@/types";
 
@@ -28,7 +29,7 @@ const verifyFacts = async (
 GROUND TRUTH:
 - Full Name: ${customer.fullName}
 - Plan: ${customer.plan}
-- Amount Due: $${Number(customer.amountDue).toFixed(2)}
+- Amount Due: ${formatMoney(customer.amountDue)}
 - Due Date: ${customer.dueDate}
 - Account ID: ${customer.accountId}
 
@@ -74,7 +75,7 @@ Full Name  : ${customer.fullName}
 Email      : ${customer.email}
 Phone      : ${customer.phone ?? "not provided"}
 Plan       : ${customer.plan}
-Amount Due : $${Number(customer.amountDue).toFixed(2)}
+Amount Due : ${formatMoney(customer.amountDue)}
 Due Date   : ${customer.dueDate}
 Status     : ${customer.status}
 ━━━━━━━━━━━━━━━━━━━━━━━━`;
